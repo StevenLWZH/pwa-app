@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="/pwa-app/manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>時間管理四象限</title>
@@ -219,6 +219,16 @@
     </footer>
 
     <script>
+        if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+            navigator.serviceWorker.register('/pwa-app/service-worker.js')
+                .then(function (registration) {
+                    console.log('Service Worker 註冊成功:', registration.scope);
+                }, function (err) {
+                    console.log('Service Worker 註冊失敗:', err);
+                });
+        });
+    }
         // 從本地儲存載入任務
         document.addEventListener('DOMContentLoaded', function() {
             // 設定截止日期輸入框的預設值為明天
