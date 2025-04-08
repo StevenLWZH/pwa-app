@@ -1,131 +1,198 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>任務管理系統</title>
-
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-analytics-compat.js"></script>
-
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 2rem;
-      background: #f9fafb;
-    }
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 1rem;
-    }
-    input, button {
-      padding: 0.5rem;
-      margin-right: 0.5rem;
-    }
-    ul {
-      list-style: none;
-      padding: 0;
-    }
-    li {
-      background: #fff;
-      margin: 0.5rem 0;
-      padding: 0.75rem;
-      border-radius: 0.5rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    li.completed {
-      text-decoration: line-through;
-      color: #888;
-    }
-    .buttons {
-      display: flex;
-      gap: 0.5rem;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>時間管理四象限</title>
+    <!-- Firebase App 和 Firestore SDK 引入 -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-analytics.js"></script>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #00796b;
+            color: white;
+            text-align: center;
+            padding: 20px 0;
+        }
+        .task-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+        }
+        .task-quadrant {
+            width: 40%;
+            min-width: 250px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+        }
+        .task-quadrant h2 {
+            text-align: center;
+            color: #00796b;
+        }
+        .task-list {
+            list-style: none;
+            padding-left: 0;
+        }
+        .task-list li {
+            background-color: #f1f1f1;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .task-list li button {
+            background-color: red;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .task-list li button:hover {
+            background-color: #d32f2f;
+        }
+        .task-actions {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .task-actions button {
+            padding: 10px 20px;
+            background-color: #00796b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .task-actions button:hover {
+            background-color: #004d40;
+        }
+        input[type="date"], input[type="text"] {
+            padding: 10px;
+            margin: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
 </head>
 <body>
-  <h1>任務管理系統</h1>
-
-  <input type="text" id="taskInput" placeholder="輸入新任務..." />
-  <button onclick="addTask()">新增任務</button>
-
-  <ul id="taskList"></ul>
-
-  <script>
-    // 你的 Firebase 設定
-    const firebaseConfig = {
-      apiKey: "AIzaSyAHniz716ZPQPEIroyNOcbEscwWTyjZa0Q",
-      authDomain: "time-6611d.firebaseapp.com",
-      projectId: "time-6611d",
-      storageBucket: "time-6611d.firebasestorage.app",
-      messagingSenderId: "24722038287",
-      appId: "1:24722038287:web:fabe1ffa81f96669b10d7a",
-      measurementId: "G-0SHLTP94ZR"
-    };
-
-    // 初始化 Firebase
-    firebase.initializeApp(firebaseConfig);
-    firebase.analytics();
-    const db = firebase.firestore();
-    const taskCollection = db.collection("tasks");
-
-    // 新增任務
-    function addTask() {
-      const taskInput = document.getElementById("taskInput");
-      const title = taskInput.value.trim();
-      if (!title) return;
-
-      taskCollection.add({
-        title,
-        completed: false,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-
-      taskInput.value = "";
-    }
-
-    // 渲染任務列表
-    function renderTask(doc) {
-      const li = document.createElement("li");
-      li.setAttribute("data-id", doc.id);
-      if (doc.data().completed) {
-        li.classList.add("completed");
-      }
-
-      li.innerHTML = `
-        ${doc.data().title}
-        <div class="buttons">
-          <button onclick="toggleComplete('${doc.id}', ${doc.data().completed})">
-            ${doc.data().completed ? '取消完成' : '完成'}
-          </button>
-          <button onclick="deleteTask('${doc.id}')">刪除</button>
+    <header>
+        <h1>時間管理四象限</h1>
+    </header>
+    
+    <div class="task-container">
+        <!-- 四象限區域 -->
+        <div class="task-quadrant" id="quadrant-1">
+            <h2>重要且緊急</h2>
+            <ul class="task-list" id="tasks-quadrant-1">
+                <!-- 這裡會顯示任務 -->
+            </ul>
         </div>
-      `;
+        
+        <div class="task-quadrant" id="quadrant-2">
+            <h2>重要但不緊急</h2>
+            <ul class="task-list" id="tasks-quadrant-2">
+                <!-- 這裡會顯示任務 -->
+            </ul>
+        </div>
+        
+        <div class="task-quadrant" id="quadrant-3">
+            <h2>不重要但緊急</h2>
+            <ul class="task-list" id="tasks-quadrant-3">
+                <!-- 這裡會顯示任務 -->
+            </ul>
+        </div>
+        
+        <div class="task-quadrant" id="quadrant-4">
+            <h2>不重要也不緊急</h2>
+            <ul class="task-list" id="tasks-quadrant-4">
+                <!-- 這裡會顯示任務 -->
+            </ul>
+        </div>
+    </div>
 
-      document.getElementById("taskList").appendChild(li);
-    }
+    <div class="task-actions">
+        <!-- 新增任務按鈕 -->
+        <button id="add-task-btn">新增任務</button>
+        <!-- 其他按鈕可視需求增加 -->
+    </div>
 
-    // 監聽任務變動
-    taskCollection.orderBy("createdAt").onSnapshot(snapshot => {
-      const list = document.getElementById("taskList");
-      list.innerHTML = "";
-      snapshot.forEach(doc => renderTask(doc));
-    });
+    <!-- Firebase 設定和初始化 -->
+    <script>
+        // Firebase 配置
+        const firebaseConfig = {
+            apiKey: "AIzaSyAHniz716ZPQPEIroyNOcbEscwWTyjZa0Q",
+            authDomain: "time-6611d.firebaseapp.com",
+            projectId: "time-6611d",
+            storageBucket: "time-6611d.firebasestorage.app",
+            messagingSenderId: "24722038287",
+            appId: "1:24722038287:web:fabe1ffa81f96669b10d7a",
+            measurementId: "G-0SHLTP94ZR"
+        };
 
-    // 完成 / 取消完成
-    function toggleComplete(id, current) {
-      taskCollection.doc(id).update({ completed: !current });
-    }
+        // 初始化 Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const analytics = firebase.analytics();
 
-    // 刪除任務
-    function deleteTask(id) {
-      taskCollection.doc(id).delete();
-    }
-  </script>
+        // 獲取每個象限的任務
+        const tasksRef = db.collection('tasks');
+
+        // 顯示任務
+        function displayTasks() {
+            tasksRef.get().then((snapshot) => {
+                snapshot.forEach((doc) => {
+                    const task = doc.data();
+                    const taskElement = document.createElement("li");
+                    taskElement.textContent = task.name;
+                    const deleteButton = document.createElement("button");
+                    deleteButton.textContent = "刪除";
+                    deleteButton.onclick = () => deleteTask(doc.id);
+                    taskElement.appendChild(deleteButton);
+                    document.getElementById(`tasks-quadrant-${task.quadrant}`).appendChild(taskElement);
+                });
+            });
+        }
+
+        // 新增任務
+        document.getElementById('add-task-btn').addEventListener('click', () => {
+            const taskName = prompt("請輸入任務名稱:");
+            const taskQuadrant = prompt("請輸入任務所屬象限（1-4）:");
+
+            if (taskName && taskQuadrant >= 1 && taskQuadrant <= 4) {
+                tasksRef.add({
+                    name: taskName,
+                    quadrant: taskQuadrant
+                }).then(() => {
+                    displayTasks();
+                });
+            }
+        });
+
+        // 刪除任務
+        function deleteTask(taskId) {
+            tasksRef.doc(taskId).delete().then(() => {
+                displayTasks();
+            });
+        }
+
+        // 初始化時顯示任務
+        displayTasks();
+    </script>
 </body>
 </html>
