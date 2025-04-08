@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>時間管理四象限</title>
-    <!-- Firebase App 和 Firestore SDK 引入 -->
+    <!-- 引入 Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-analytics.js"></script>
-    
+    <!-- 自定義 CSS -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -94,47 +94,46 @@
     <header>
         <h1>時間管理四象限</h1>
     </header>
-    
+
+    <!-- 四象限區域 -->
     <div class="task-container">
-        <!-- 四象限區域 -->
         <div class="task-quadrant" id="quadrant-1">
             <h2>重要且緊急</h2>
             <ul class="task-list" id="tasks-quadrant-1">
-                <!-- 這裡會顯示任務 -->
+                <!-- 任務列表 -->
             </ul>
         </div>
         
         <div class="task-quadrant" id="quadrant-2">
             <h2>重要但不緊急</h2>
             <ul class="task-list" id="tasks-quadrant-2">
-                <!-- 這裡會顯示任務 -->
+                <!-- 任務列表 -->
             </ul>
         </div>
         
         <div class="task-quadrant" id="quadrant-3">
             <h2>不重要但緊急</h2>
             <ul class="task-list" id="tasks-quadrant-3">
-                <!-- 這裡會顯示任務 -->
+                <!-- 任務列表 -->
             </ul>
         </div>
         
         <div class="task-quadrant" id="quadrant-4">
             <h2>不重要也不緊急</h2>
             <ul class="task-list" id="tasks-quadrant-4">
-                <!-- 這裡會顯示任務 -->
+                <!-- 任務列表 -->
             </ul>
         </div>
     </div>
 
+    <!-- 按鈕區域 -->
     <div class="task-actions">
-        <!-- 新增任務按鈕 -->
         <button id="add-task-btn">新增任務</button>
-        <!-- 其他按鈕可視需求增加 -->
+        <button id="clear-all-btn">清除所有任務</button>
     </div>
 
-    <!-- Firebase 設定和初始化 -->
+    <!-- Firebase 設定與初始化 -->
     <script>
-        // Firebase 配置
         const firebaseConfig = {
             apiKey: "AIzaSyAHniz716ZPQPEIroyNOcbEscwWTyjZa0Q",
             authDomain: "time-6611d.firebaseapp.com",
@@ -145,25 +144,26 @@
             measurementId: "G-0SHLTP94ZR"
         };
 
-        // 初始化 Firebase
         const app = firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const analytics = firebase.analytics();
 
-        // 獲取每個象限的任務
-        const tasksRef = db.collection('tasks');
-
         // 顯示任務
         function displayTasks() {
+            const tasksRef = db.collection("tasks");
+
             tasksRef.get().then((snapshot) => {
                 snapshot.forEach((doc) => {
                     const task = doc.data();
                     const taskElement = document.createElement("li");
                     taskElement.textContent = task.name;
+
                     const deleteButton = document.createElement("button");
                     deleteButton.textContent = "刪除";
                     deleteButton.onclick = () => deleteTask(doc.id);
                     taskElement.appendChild(deleteButton);
+
+                    // 根據象限顯示任務
                     document.getElementById(`tasks-quadrant-${task.quadrant}`).appendChild(taskElement);
                 });
             });
@@ -175,7 +175,7 @@
             const taskQuadrant = prompt("請輸入任務所屬象限（1-4）:");
 
             if (taskName && taskQuadrant >= 1 && taskQuadrant <= 4) {
-                tasksRef.add({
+                db.collection('tasks').add({
                     name: taskName,
                     quadrant: taskQuadrant
                 }).then(() => {
@@ -186,10 +186,21 @@
 
         // 刪除任務
         function deleteTask(taskId) {
-            tasksRef.doc(taskId).delete().then(() => {
+            db.collection('tasks').doc(taskId).delete().then(() => {
                 displayTasks();
             });
         }
+
+        // 清除所有任務
+        document.getElementById('clear-all-btn').addEventListener('click', () => {
+            db.collection("tasks").get().then((snapshot) => {
+                snapshot.forEach((doc) => {
+                    db.collection("tasks").doc(doc.id).delete();
+                });
+            }).then(() => {
+                displayTasks();
+            });
+        });
 
         // 初始化時顯示任務
         displayTasks();
