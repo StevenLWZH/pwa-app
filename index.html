@@ -1,6 +1,36 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
+    <!-- 加在 <head> 裡面 -->
+    <script type="module">
+      // Firebase SDK 模組載入（來自 CDN）
+      import { initializeApp } from "firebase/app";
+      import { getFirestore, collection, addDoc, getDocs } from "firebase/analytics";
+    
+      const firebaseConfig = {
+      apiKey: "AIzaSyAHniz716ZPQPEIroyNOcbEscwWTyjZa0Q",
+      authDomain: "time-6611d.firebaseapp.com",
+      projectId: "time-6611d",
+      storageBucket: "time-6611d.firebasestorage.app",
+      messagingSenderId: "24722038287",
+      appId: "1:24722038287:web:fabe1ffa81f96669b10d7a",
+      measurementId: "G-0SHLTP94ZR"
+      };
+    
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+    
+      // 範例：取得所有任務
+      async function getTasks() {
+        const querySnapshot = await getDocs(collection(db, "tasks"));
+        querySnapshot.forEach((doc) => {
+          console.log(doc.id, "=>", doc.data());
+        });
+      }
+    
+      getTasks();
+    </script>
+
     <link rel="manifest" href="/pwa-app/manifest.json">
     <link rel="icon" href="favicon.png" type="png">
     <meta charset="UTF-8">
