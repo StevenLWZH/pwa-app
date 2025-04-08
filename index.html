@@ -1,13 +1,64 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
-    <!-- 加在 <head> 裡面 -->
-    <script type="module">
-      // Firebase SDK 模組載入（來自 CDN）
-      import { initializeApp } from "firebase/app";
-      import { getFirestore, collection, addDoc, getDocs } from "firebase/analytics";
-    
-      const firebaseConfig = {
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>任務管理系統</title>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-analytics-compat.js"></script>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      background: #f9fafb;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    input, button {
+      padding: 0.5rem;
+      margin-right: 0.5rem;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      background: #fff;
+      margin: 0.5rem 0;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    li.completed {
+      text-decoration: line-through;
+      color: #888;
+    }
+    .buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>任務管理系統</h1>
+
+  <input type="text" id="taskInput" placeholder="輸入新任務..." />
+  <button onclick="addTask()">新增任務</button>
+
+  <ul id="taskList"></ul>
+
+  <script>
+    // 你的 Firebase 設定
+    const firebaseConfig = {
       apiKey: "AIzaSyAHniz716ZPQPEIroyNOcbEscwWTyjZa0Q",
       authDomain: "time-6611d.firebaseapp.com",
       projectId: "time-6611d",
@@ -15,564 +66,66 @@
       messagingSenderId: "24722038287",
       appId: "1:24722038287:web:fabe1ffa81f96669b10d7a",
       measurementId: "G-0SHLTP94ZR"
-      };
-    
-      const app = initializeApp(firebaseConfig);
-      const db = getFirestore(app);
-    
-      // 範例：取得所有任務
-      async function getTasks() {
-        const querySnapshot = await getDocs(collection(db, "tasks"));
-        querySnapshot.forEach((doc) => {
-          console.log(doc.id, "=>", doc.data());
-        });
+    };
+
+    // 初始化 Firebase
+    firebase.initializeApp(firebaseConfig);
+    firebase.analytics();
+    const db = firebase.firestore();
+    const taskCollection = db.collection("tasks");
+
+    // 新增任務
+    function addTask() {
+      const taskInput = document.getElementById("taskInput");
+      const title = taskInput.value.trim();
+      if (!title) return;
+
+      taskCollection.add({
+        title,
+        completed: false,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      taskInput.value = "";
+    }
+
+    // 渲染任務列表
+    function renderTask(doc) {
+      const li = document.createElement("li");
+      li.setAttribute("data-id", doc.id);
+      if (doc.data().completed) {
+        li.classList.add("completed");
       }
-    
-      getTasks();
-    </script>
 
-    <link rel="manifest" href="/pwa-app/manifest.json">
-    <link rel="icon" href="favicon.png" type="png">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>時間管理四象限</title>
-    <style>
-        body {
-            font-family: 'Microsoft JhengHei', Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        h1 {
-            text-align: center;
-            color: #333;
-        }
-        .controls {
-            margin: 20px auto;
-            max-width: 800px;
-            padding: 15px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .input-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            grid-template-rows: repeat(2, 1fr);
-            gap: 15px;
-            margin: 0 auto;
-            max-width: 800px;
-        }
-        .quadrant {
-            padding: 15px;
-            background-color: white;
-            border-radius: 8px;
-            min-height: 200px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .quadrant h2 {
-            margin-top: 0;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
-        }
-        #q1 {
-            background-color: #ffebee; /* 紅色淺背景 - 緊急且重要 */
-        }
-        #q2 {
-            background-color: #e3f2fd; /* 藍色淺背景 - 重要但不緊急 */
-        }
-        #q3 {
-            background-color: #fff8e1; /* 黃色淺背景 - 緊急但不重要 */
-        }
-        #q4 {
-            background-color: #f1f8e9; /* 綠色淺背景 - 不緊急且不重要 */
-        }
-        .task {
-            margin: 10px 0;
-            padding: 10px;
-            background-color: rgba(255, 255, 255, 0.7);
-            border-radius: 4px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-        }
-        .task-info {
-            flex: 1;
-            min-width: 60%;
-        }
-        .task-title {
-            font-weight: bold;
-            margin-bottom: 3px;
-        }
-        .task-note {
-            font-style: italic;
-            font-size: 0.9em;
-            color: #555;
-        }
-        .task-deadline {
-            font-size: 0.85em;
-            color: #555;
-        }
-        .urgent {
-            color: #f44336;
-            font-weight: bold;
-        }
-        .approaching {
-            color: #ff9800;
-        }
-        .safe {
-            color: #4CAF50;
-        }
-        .task-controls {
-            display: flex;
-            gap: 5px;
-            align-items: center;
-        }
-        .task-controls button {
-            border: none;
-            background: none;
-            cursor: pointer;
-            font-size: 16px;
-            padding: 3px;
-        }
-        .task-controls button:hover {
-            background-color: rgba(0,0,0,0.05);
-            border-radius: 3px;
-        }
-        input, select, button {
-            padding: 8px;
-            margin: 5px 0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        .delete-btn {
-            color: #f44336;
-            font-size: 14px;
-        }
-        .move-btn {
-            color: #2196F3;
-        }
-        .completed {
-            text-decoration: line-through;
-            opacity: 0.6;
-        }
-        #sortSelect {
-            margin-left: auto;
-        }
-        footer {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 0.85em;
-            color: #666;
-        }
-        @media (max-width: 768px) {
-            .grid-container {
-                grid-template-columns: 1fr;
-            }
-            .input-group {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            #sortSelect {
-                margin-left: 0;
-            }
-        }
-    </style>
-</head>
-<body>
-    <h1>時間管理四象限</h1>
-    
-    <div class="controls">
-        <div class="input-group">
-            <input type="text" id="taskInput" placeholder="輸入任務名稱..." style="flex: 2;">
-            <input type="text" id="noteInput" placeholder="輸入備註..." style="flex: 2;">
-            <input type="datetime-local" id="deadlineInput" style="flex: 1;">
-            <select id="quadrantSelect">
-                <option value="q1">重要且緊急</option>
-                <option value="q2">重要但不緊急</option>
-                <option value="q3">緊急但不重要</option>
-                <option value="q4">不重要也不緊急</option>
-            </select>
-            <button onclick="addTask()">新增任務</button>
+      li.innerHTML = `
+        ${doc.data().title}
+        <div class="buttons">
+          <button onclick="toggleComplete('${doc.id}', ${doc.data().completed})">
+            ${doc.data().completed ? '取消完成' : '完成'}
+          </button>
+          <button onclick="deleteTask('${doc.id}')">刪除</button>
         </div>
-        <div class="input-group">
-            <select id="sortSelect" onchange="loadTasks()">
-                <option value="quadrant">依象限排序</option>
-                <option value="deadline">依截止日期排序</option>
-                <option value="created">依建立日期排序</option>
-            </select>
-            <button onclick="loadTasks()">重新整理</button>
-        </div>
-    </div>
-    
-    <div class="grid-container">
-        <div class="quadrant" id="q1">
-            <h2>重要且緊急</h2>
-            <p>需立即處理的危機</p>
-            <div class="tasks"></div>
-        </div>
-        <div class="quadrant" id="q2">
-            <h2>重要但不緊急</h2>
-            <p>專注投資的項目</p>
-            <div class="tasks"></div>
-        </div>
-        <div class="quadrant" id="q3">
-            <h2>緊急但不重要</h2>
-            <p>可委派的干擾</p>
-            <div class="tasks"></div>
-        </div>
-        <div class="quadrant" id="q4">
-            <h2>不重要也不緊急</h2>
-            <p>可以消除的事項</p>
-            <div class="tasks"></div>
-        </div>
-    </div>
-    
-    <footer>
-        資料儲存於瀏覽器的localStorage中，關閉頁面後資料將自動保留，再次開啟即可繼續使用。
-    </footer>
+      `;
 
-    <script>
-        if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function () {
-            navigator.serviceWorker.register('/pwa-app/service-worker.js')
-                .then(function (registration) {
-                    console.log('Service Worker 註冊成功:', registration.scope);
-                }, function (err) {
-                    console.log('Service Worker 註冊失敗:', err);
-                });
-        });
-    }
-        // 從本地儲存載入任務
-        document.addEventListener('DOMContentLoaded', function() {
-            // 設定截止日期輸入框的預設值為明天
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            document.getElementById('deadlineInput').valueAsDate = tomorrow;
-            
-            loadTasks();
-        });
-
-        // 新增任務
-        function addTask() {
-            const taskInput = document.getElementById('taskInput');
-            const noteInput = document.getElementById('noteInput');
-            const deadlineInput = document.getElementById('deadlineInput');
-            const quadrantSelect = document.getElementById('quadrantSelect');
-            
-            if (taskInput.value.trim() === '') return;
-            
-            const taskText = taskInput.value;
-            const noteText = noteInput.value;
-            const deadline = deadlineInput.value ? new Date(deadlineInput.value).getTime() : null;
-            const quadrantId = quadrantSelect.value;
-            
-            const task = {
-                id: Date.now(),
-                text: taskText,
-                note: noteText,
-                deadline: deadline,
-                completed: false,
-                quadrant: quadrantId,
-                created: Date.now()
-            };
-            
-            // 獲取目前任務列表
-            let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-            tasks.push(task);
-            
-            // 儲存到本地儲存
-            localStorage.setItem('tasks', JSON.stringify(tasks));
-            
-            // 重新載入任務
-            loadTasks();
-            
-            // 清空輸入欄位
-            taskInput.value = '';
-            noteInput.value = '';
-        }
-
-        // 載入任務
-        function loadTasks() {
-            let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-            const sortType = document.getElementById('sortSelect').value;
-            
-            // 依照選擇的方式排序
-            if (sortType === 'deadline') {
-                tasks.sort((a, b) => {
-                    if (!a.deadline) return 1;
-                    if (!b.deadline) return -1;
-                    return a.deadline - b.deadline;
-                });
-            } else if (sortType === 'created') {
-                tasks.sort((a, b) => a.created - b.created);
-            }
-            
-            // 清空所有象限
-            document.querySelectorAll('.tasks').forEach(el => {
-                el.innerHTML = '';
-            });
-            
-            // 分配任務到相應象限
-            tasks.forEach(task => {
-                const quadrantTasks = document.querySelector(`#${task.quadrant} .tasks`);
-                const taskElement = createTaskElement(task);
-                quadrantTasks.appendChild(taskElement);
-            });
-        }
-
-// 創建任務元素（更新版）
-function createTaskElement(task) {
-    const taskDiv = document.createElement('div');
-    taskDiv.className = 'task';
-    taskDiv.style.position = 'relative'; // 讓絕對定位元素以此容器為參考
-    if (task.completed) {
-        taskDiv.classList.add('completed');
-    }
-    taskDiv.setAttribute('data-id', task.id);
-
-    // 截止日期顯示：位於右上角，僅顯示格式化後的日期
-    if (task.deadline) {
-        const deadlineDate = new Date(task.deadline);
-        const formattedDate = formatDate(deadlineDate); // 可根據需要只取日期部分
-        const deadlineSpan = document.createElement('span');
-        deadlineSpan.className = 'task-deadline';
-        deadlineSpan.style.position = 'absolute';
-        deadlineSpan.style.top = '5px';
-        deadlineSpan.style.right = '10px';
-        deadlineSpan.style.fontSize = '0.8em';
-        deadlineSpan.style.color = '#555';
-        deadlineSpan.innerText = formattedDate;
-        taskDiv.appendChild(deadlineSpan);
+      document.getElementById("taskList").appendChild(li);
     }
 
-    // 任務資訊區域（標題與備註）
-    const taskInfo = document.createElement('div');
-    taskInfo.className = 'task-info';
+    // 監聽任務變動
+    taskCollection.orderBy("createdAt").onSnapshot(snapshot => {
+      const list = document.getElementById("taskList");
+      list.innerHTML = "";
+      snapshot.forEach(doc => renderTask(doc));
+    });
 
-    // 任務標題：顯示在第一行，若為重要且緊急則標題為紅色
-    const taskTitle = document.createElement('div');
-    taskTitle.className = 'task-title';
-    taskTitle.innerText = task.text;
-    if (task.quadrant === 'q1') {
-        taskTitle.style.color = 'red';
-    }
-    taskInfo.appendChild(taskTitle);
-
-    // 任務備註：顯示在標題下，字體較小
-    if (task.note && task.note.trim() !== '') {
-        const taskNote = document.createElement('div');
-        taskNote.className = 'task-note';
-        taskNote.style.fontSize = '0.9em';
-        taskNote.style.color = '#555';
-        taskNote.innerText = task.note;
-        taskInfo.appendChild(taskNote);
+    // 完成 / 取消完成
+    function toggleComplete(id, current) {
+      taskCollection.doc(id).update({ completed: !current });
     }
 
-    taskDiv.appendChild(taskInfo);
-
-    // 控制按鈕區域（完成、修改、移動、刪除按鈕）
-    const taskControls = document.createElement('div');
-    taskControls.className = 'task-controls';
-
-    // 完成按鈕
-    const completeBtn = document.createElement('button');
-    completeBtn.innerHTML = '✓';
-    completeBtn.title = task.completed ? '標記為未完成' : '標記為完成';
-    completeBtn.onclick = function() {
-        toggleComplete(task.id);
-    };
-
-    // 修改按鈕
-    const editBtn = document.createElement('button');
-    editBtn.innerHTML = '✎';
-    editBtn.className = 'edit-btn';
-    editBtn.title = '修改任務';
-    editBtn.onclick = function() {
-        editTask(task.id);
-    };
-
-    // 移動按鈕
-    const moveBtn = document.createElement('button');
-    moveBtn.innerHTML = '↔️';
-    moveBtn.className = 'move-btn';
-    moveBtn.title = '移動到另一象限';
-    moveBtn.onclick = function() {
-        showMoveOptions(task.id);
-    };
-
-    // 刪除按鈕
-    const deleteBtn = document.createElement('button');
-    deleteBtn.innerHTML = '🗑️';
-    deleteBtn.className = 'delete-btn';
-    deleteBtn.title = '刪除任務';
-    deleteBtn.onclick = function() {
-        deleteTask(task.id);
-    };
-
-    taskControls.appendChild(completeBtn);
-    taskControls.appendChild(editBtn);
-    taskControls.appendChild(moveBtn);
-    taskControls.appendChild(deleteBtn);
-    taskDiv.appendChild(taskControls);
-
-    return taskDiv;
-}
-
-        // 格式化日期顯示
-        function formatDate(date) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            
-            return `${year}/${month}/${day} ${hours}:${minutes}`;
-        }
-
-        // 切換任務完成狀態
-        function toggleComplete(taskId) {
-            let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-            
-            tasks = tasks.map(task => {
-                if (task.id === taskId) {
-                    return {...task, completed: !task.completed};
-                }
-                return task;
-            });
-            
-            localStorage.setItem('tasks', JSON.stringify(tasks));
-            loadTasks();
-        }
-
-        // 修改任務（包含備註）
-        function editTask(taskId) {
-            let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-            const task = tasks.find(t => t.id === taskId);
-            
-            if (!task) return;
-            
-            const newText = prompt('修改任務名稱:', task.text);
-            if (newText === null) return; // 使用者取消
-
-            // 編輯備註欄位
-            const newNote = prompt('修改備註:', task.note || '');
-            
-            let newDeadline = null;
-            if (task.deadline) {
-                const deadlineDate = new Date(task.deadline);
-                const year = deadlineDate.getFullYear();
-                const month = String(deadlineDate.getMonth() + 1).padStart(2, '0');
-                const day = String(deadlineDate.getDate()).padStart(2, '0');
-                const hours = String(deadlineDate.getHours()).padStart(2, '0');
-                const minutes = String(deadlineDate.getMinutes()).padStart(2, '0');
-                
-                const newDeadlineStr = prompt(
-                    '修改截止日期 (YYYY/MM/DD HH:MM):',
-                    `${year}/${month}/${day} ${hours}:${minutes}`
-                );
-                
-                if (newDeadlineStr && newDeadlineStr.trim() !== '') {
-                    newDeadline = new Date(newDeadlineStr.replace(/\//g, '-')).getTime();
-                }
-            } else {
-                const addDeadline = confirm('是否要加入截止日期？');
-                if (addDeadline) {
-                    const now = new Date();
-                    const year = now.getFullYear();
-                    const month = String(now.getMonth() + 1).padStart(2, '0');
-                    const day = String(now.getDate()).padStart(2, '0');
-                    
-                    const newDeadlineStr = prompt(
-                        '輸入截止日期 (YYYY/MM/DD HH:MM):',
-                        `${year}/${month}/${day} 23:59`
-                    );
-                    
-                    if (newDeadlineStr && newDeadlineStr.trim() !== '') {
-                        newDeadline = new Date(newDeadlineStr.replace(/\//g, '-')).getTime();
-                    }
-                }
-            }
-            
-            const updatedTasks = tasks.map(t => {
-                if (t.id === taskId) {
-                    return {
-                        ...t,
-                        text: newText.trim() !== '' ? newText : t.text,
-                        deadline: newDeadline !== null ? newDeadline : t.deadline,
-                        note: newNote !== null ? newNote : t.note
-                    };
-                }
-                return t;
-            });
-            
-            localStorage.setItem('tasks', JSON.stringify(updatedTasks));
-            loadTasks();
-        }
-
-        // 顯示移動選項
-        function showMoveOptions(taskId) {
-            const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-            const task = tasks.find(t => t.id === taskId);
-            
-            if (!task) return;
-            
-            const newQuadrant = prompt(
-                '選擇目標象限:\n' +
-                '1: 重要且緊急\n' +
-                '2: 重要但不緊急\n' +
-                '3: 緊急但不重要\n' +
-                '4: 不重要也不緊急\n' +
-                '請輸入數字 (1-4):'
-            );
-            
-            if (newQuadrant && ['1', '2', '3', '4'].includes(newQuadrant)) {
-                moveTask(taskId, `q${newQuadrant}`);
-            }
-        }
-
-        // 移動任務到另一象限
-        function moveTask(taskId, newQuadrant) {
-            let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-            
-            tasks = tasks.map(task => {
-                if (task.id === taskId) {
-                    return {...task, quadrant: newQuadrant};
-                }
-                return task;
-            });
-            
-            localStorage.setItem('tasks', JSON.stringify(tasks));
-            loadTasks();
-        }
-
-        // 刪除任務
-        function deleteTask(taskId) {
-            if (!confirm('確定要刪除此任務嗎？')) return;
-            
-            let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-            tasks = tasks.filter(task => task.id !== taskId);
-            
-            localStorage.setItem('tasks', JSON.stringify(tasks));
-            loadTasks();
-        }
-    </script>
+    // 刪除任務
+    function deleteTask(id) {
+      taskCollection.doc(id).delete();
+    }
+  </script>
 </body>
 </html>
